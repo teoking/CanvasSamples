@@ -8,10 +8,11 @@ import android.view.View
 import java.util.*
 import kotlin.math.abs
 
+// A doodle based on a path.
 class DoodleItem {
 
     // Doodle Line Color
-    var color = -0xff0100
+    var color = Color.RED
 
     // Doodle Line Width
     var width = 12.0f
@@ -37,12 +38,12 @@ class DoodleItem {
             if (dx > 0 || dy > 0) {
                 // Add a quadratic bezier:
                 // lastPoint as is curve control point
-                //
+                // current point as is curve end point
                 path.quadTo(
                     lastPoint.x,
                     lastPoint.y,
-                    (point.x + lastPoint.x) / 2.0f,
-                    (point.y + lastPoint.y) / 2.0f
+                    point.x,
+                    point.y
                 )
                 pointList.add(point)
                 lastPoint = point
@@ -58,6 +59,7 @@ class DoodleItem {
             canvas.drawCircle(firstPoint.x, firstPoint.y, width / 2.0f, paint)
             val lastPointA: PointF = pointList[pointList.size - 1]
             val lastPointB: PointF = pointList[pointList.size - 2]
+            // Draw start point as a circle
             canvas.drawCircle(
                 (lastPointA.x + lastPointB.x) / 2.0f,
                 (lastPointA.y + lastPointB.y) / 2.0f,
@@ -66,6 +68,7 @@ class DoodleItem {
             )
             paint.strokeWidth = width
             paint.style = Paint.Style.STROKE
+            // Draw the path from points
             canvas.drawPath(path, paint)
         } else if (pointList.size == 1) { // Draw only one point
             val firstPoint: PointF = pointList[0]
@@ -76,17 +79,16 @@ class DoodleItem {
             paint.style = Paint.Style.STROKE
             canvas.drawPath(path, paint)
         }
-        paint.xfermode = null
     }
 }
 
-class DoodleView(context: Context, attrs: AttributeSet): View(context, attrs) {
+class DoodleView(context: Context, attrs: AttributeSet) : View(context, attrs) {
 
     private var currentDoodle: DoodleItem? = null
     private var doodleList = ArrayList<DoodleItem>()
     private val paint = Paint()
     private val lineWidth = 12.0f
-    private val lineColor = Color.RED
+    private val lineColor = Color.GREEN
 
     override fun onDraw(canvas: Canvas) {
         for (i in doodleList.indices) {
@@ -95,6 +97,10 @@ class DoodleView(context: Context, attrs: AttributeSet): View(context, attrs) {
         currentDoodle?.draw(canvas, paint)
     }
 
+    // A doodle's cycle via MotionEvent:
+    // 1. Start on down event, add first point
+    // 2. Add points on move event continually
+    // 3. End on up/cancel event, save it to doodle list
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val x = event.x
         val y = event.y
