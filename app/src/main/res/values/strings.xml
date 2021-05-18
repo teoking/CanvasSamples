@@ -8,6 +8,6 @@
     <string name="action_settings">Settings</string>
 
     <string name="menu_home">Home</string>
-    <string name="menu_doodle">Draw Doodle</string>
-    <string name="menu_slideshow">Slideshow</string>
+    <string name="menu_doodle">Doodle</string>
+    <string name="menu_spectrogram">Spectrogram</string>
 </resources>
