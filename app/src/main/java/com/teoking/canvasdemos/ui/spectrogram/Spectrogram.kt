@@ -124,6 +124,8 @@ class CircleRender(private val mPaint: Paint, private val mCycleColor: Boolean) 
     private var modulation = 0f
     private var aggressive = 0.33f
 
+    private val points = FloatArray(8)
+
     override fun onRender(canvas: Canvas, data: ByteArray, rect: Rect) {
         if (mCycleColor) {
             cycleColor()
@@ -131,26 +133,21 @@ class CircleRender(private val mPaint: Paint, private val mCycleColor: Boolean) 
 
         mPoints?.let {
             for (i in 0 until data.size - 1) {
-                val cartPoint = floatArrayOf(
-                    i.toFloat() / (data.size - 1),
-                    (rect.height() / 2 + (data[i] + 128).toByte() * (rect.height() / 2) / 128).toFloat()
-                )
-                val polarPoint: FloatArray = toPolar(cartPoint, rect)
+                points[0] = i.toFloat() / (data.size - 1)
+                points[1] = (rect.height() / 2 + (data[i] + 128).toByte() * (rect.height() / 2) / 128).toFloat()
+                toPolar(points, rect, 0)
                 // x1
-                it[i * 4] = polarPoint[0]
+                it[i * 4] = points[2]
                 // y1
-                it[i * 4 + 1] = polarPoint[1]
-                val cartPoint2 = floatArrayOf(
-                    (i + 1).toFloat() / (data.size - 1),
-                    (rect.height() / 2 + (data[i + 1] + 128).toByte() * (rect.height() / 2) / 128).toFloat()
-                )
-                val polarPoint2: FloatArray = toPolar(cartPoint2, rect)
+                it[i * 4 + 1] = points[3]
+                points[4] = (i + 1).toFloat() / (data.size - 1)
+                points[5] = (rect.height() / 2 + (data[i + 1] + 128).toByte() * (rect.height() / 2) / 128).toFloat()
+                toPolar(points, rect, 4)
                 // x2
-                it[i * 4 + 2] = polarPoint2[0]
+                it[i * 4 + 2] = points[6]
                 // y2
-                it[i * 4 + 3] = polarPoint2[1]
+                it[i * 4 + 3] = points[7]
             }
-
             canvas.drawLines(it, mPaint)
 
             // Controls the pulsing rate
@@ -162,18 +159,17 @@ class CircleRender(private val mPaint: Paint, private val mCycleColor: Boolean) 
         // Do nothing, only render audio data
     }
 
-    private fun toPolar(cartesian: FloatArray, rect: Rect): FloatArray {
+    private fun toPolar(cartesian: FloatArray, rect: Rect, start: Int): FloatArray {
         val cX = (rect.width() / 2).toDouble()
         val cY = (rect.height() / 2).toDouble()
-        val angle = cartesian[0] * 2 * Math.PI
+        val angle = cartesian[start] * 2 * Math.PI
         val radius =
-            (rect.width() / 2 * (1 - aggressive) + aggressive * cartesian[1] / 2) * (1.2 + sin(
+            (rect.width() / 2 * (1 - aggressive) + aggressive * cartesian[start+1] / 2) * (1.2 + sin(
                 modulation.toDouble()
             )) / 2.2
-        return floatArrayOf(
-            (cX + radius * sin(angle)).toFloat(),
-            (cY + radius * cos(angle)).toFloat()
-        )
+        cartesian[start+2] = (cX + radius * sin(angle)).toFloat()
+        cartesian[start+3] = (cY + radius * cos(angle)).toFloat()
+        return cartesian
     }
 
     private var colorCounter = 0f
@@ -192,6 +188,9 @@ class CircleBarFftRenderer(
     private val mPaint: Paint, private val mDivisions: Int,
     private val mCycleColor: Boolean
 ) : Renderer() {
+
+    private val points = FloatArray(8)
+
     override fun onRender(canvas: Canvas, data: ByteArray, rect: Rect) {
         // Do nothing, only render fft data
     }
@@ -201,33 +200,36 @@ class CircleBarFftRenderer(
             cycleColor()
         }
 
-        for (i in 0 until data.size / mDivisions) {
-            // Calculate dbValue
-            val rfk: Byte = data[mDivisions * i]
-            val ifk: Byte = data[mDivisions * i + 1]
-            val magnitude = (rfk * rfk + ifk * ifk).toFloat()
-            val dbValue = 75 * log10(magnitude.toDouble()).toFloat()
-            val cartPoint = floatArrayOf(
-                (i * mDivisions).toFloat() / (data.size - 1),
-                rect.height() / 2 - dbValue / 4
-            )
-            val polarPoint: FloatArray = toPolar(cartPoint, rect)
-            mFFTPoints!![i * 4] = polarPoint[0]
-            mFFTPoints!![i * 4 + 1] = polarPoint[1]
-            val cartPoint2 = floatArrayOf(
-                (i * mDivisions).toFloat() / (data.size - 1),
-                rect.height() / 2 + dbValue
-            )
-            val polarPoint2: FloatArray = toPolar(cartPoint2, rect)
-            mFFTPoints!![i * 4 + 2] = polarPoint2[0]
-            mFFTPoints!![i * 4 + 3] = polarPoint2[1]
+        mFFTPoints?.let {
+            for (i in 0 until data.size / mDivisions) {
+                // Calculate dbValue
+                val rfk: Byte = data[mDivisions * i]
+                val ifk: Byte = data[mDivisions * i + 1]
+                val magnitude = (rfk * rfk + ifk * ifk).toFloat()
+                val dbValue = 75 * log10(magnitude.toDouble()).toFloat()
+                points[0] = (i * mDivisions).toFloat() / (data.size - 1)
+                points[1] = rect.height() / 2 - dbValue / 4
+                toPolar(points, rect, 0)
+                // x1
+                it[i * 4] = points[2]
+                // y1
+                it[i * 4 + 1] = points[3]
+                points[4] = (i * mDivisions).toFloat() / (data.size - 1)
+                points[5] = rect.height() / 2 + dbValue
+                toPolar(points, rect, 4)
+                // x2
+                it[i * 4 + 2] = points[6]
+                // y2
+                it[i * 4 + 3] = points[7]
+            }
+
+            canvas.drawLines(it, mPaint)
+
+            // Controls the pulsing rate
+            modulation += 0.13f
+            angleModulation += 0.28f
         }
 
-        canvas.drawLines(mFFTPoints!!, mPaint)
-
-        // Controls the pulsing rate
-        modulation += 0.13f
-        angleModulation += 0.28f
     }
 
     private var modulation = 0f
@@ -236,18 +238,17 @@ class CircleBarFftRenderer(
     private var angleModulation = 0f
     private var aggressive = 0.4f
 
-    private fun toPolar(cartesian: FloatArray, rect: Rect): FloatArray {
+    private fun toPolar(cartesian: FloatArray, rect: Rect, start: Int): FloatArray {
         val cX = (rect.width() / 2).toDouble()
         val cY = (rect.height() / 2).toDouble()
-        val angle = cartesian[0] * 2 * Math.PI
+        val angle = cartesian[start] * 2 * Math.PI
         val radius =
-            (rect.width() / 2 * (1 - aggressive) + aggressive * cartesian[1] / 2) * (1 - modulationStrength + modulationStrength * (1 + sin(
+            (rect.width() / 2 * (1 - aggressive) + aggressive * cartesian[start+1] / 2) * (1 - modulationStrength + modulationStrength * (1 + sin(
                 modulation.toDouble()
             )) / 2)
-        return floatArrayOf(
-            (cX + radius * sin(angle + angleModulation)).toFloat(),
-            (cY + radius * cos(angle + angleModulation)).toFloat()
-        )
+        cartesian[start+2] = (cX + radius * sin(angle + angleModulation)).toFloat()
+        cartesian[start+3] = (cY + radius * cos(angle + angleModulation)).toFloat()
+        return cartesian
     }
 
     private var colorCounter = 0f
