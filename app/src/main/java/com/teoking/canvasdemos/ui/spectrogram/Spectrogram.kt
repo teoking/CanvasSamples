@@ -131,18 +131,21 @@ class CircleRender(private val mPaint: Paint, private val mCycleColor: Boolean) 
             cycleColor()
         }
 
+        val rwh = rect.width() / 2
+        val rhh = rect.height() / 2
+
         mPoints?.let {
             for (i in 0 until data.size - 1) {
                 points[0] = i.toFloat() / (data.size - 1)
-                points[1] = (rect.height() / 2 + (data[i] + 128).toByte() * (rect.height() / 2) / 128).toFloat()
-                toPolar(points, rect, 0)
+                points[1] = (rhh + (data[i] + 128).toByte() * (rhh) / 128).toFloat()
+                toPolar(points, rwh, rhh, 0)
                 // x1
                 it[i * 4] = points[2]
                 // y1
                 it[i * 4 + 1] = points[3]
                 points[4] = (i + 1).toFloat() / (data.size - 1)
-                points[5] = (rect.height() / 2 + (data[i + 1] + 128).toByte() * (rect.height() / 2) / 128).toFloat()
-                toPolar(points, rect, 4)
+                points[5] = (rhh + (data[i + 1] + 128).toByte() * (rhh) / 128).toFloat()
+                toPolar(points, rwh, rhh, 4)
                 // x2
                 it[i * 4 + 2] = points[6]
                 // y2
@@ -159,16 +162,16 @@ class CircleRender(private val mPaint: Paint, private val mCycleColor: Boolean) 
         // Do nothing, only render audio data
     }
 
-    private fun toPolar(cartesian: FloatArray, rect: Rect, start: Int): FloatArray {
-        val cX = (rect.width() / 2).toDouble()
-        val cY = (rect.height() / 2).toDouble()
+    private fun toPolar(cartesian: FloatArray, rwh: Int, rhh: Int, start: Int): FloatArray {
+        val cX = rwh.toDouble()
+        val cY = rhh.toDouble()
         val angle = cartesian[start] * 2 * Math.PI
         val radius =
-            (rect.width() / 2 * (1 - aggressive) + aggressive * cartesian[start+1] / 2) * (1.2 + sin(
+            (rwh * (1 - aggressive) + aggressive * cartesian[start + 1] / 2) * (1.2 + sin(
                 modulation.toDouble()
             )) / 2.2
-        cartesian[start+2] = (cX + radius * sin(angle)).toFloat()
-        cartesian[start+3] = (cY + radius * cos(angle)).toFloat()
+        cartesian[start + 2] = (cX + radius * sin(angle)).toFloat()
+        cartesian[start + 3] = (cY + radius * cos(angle)).toFloat()
         return cartesian
     }
 
@@ -200,6 +203,9 @@ class CircleBarFftRenderer(
             cycleColor()
         }
 
+        val rwh = rect.width() / 2
+        val rhh = rect.height() / 2
+
         mFFTPoints?.let {
             for (i in 0 until data.size / mDivisions) {
                 // Calculate dbValue
@@ -208,15 +214,15 @@ class CircleBarFftRenderer(
                 val magnitude = (rfk * rfk + ifk * ifk).toFloat()
                 val dbValue = 75 * log10(magnitude.toDouble()).toFloat()
                 points[0] = (i * mDivisions).toFloat() / (data.size - 1)
-                points[1] = rect.height() / 2 - dbValue / 4
-                toPolar(points, rect, 0)
+                points[1] = rhh - dbValue / 4
+                toPolar(points, rwh, rhh, 0)
                 // x1
                 it[i * 4] = points[2]
                 // y1
                 it[i * 4 + 1] = points[3]
                 points[4] = (i * mDivisions).toFloat() / (data.size - 1)
-                points[5] = rect.height() / 2 + dbValue
-                toPolar(points, rect, 4)
+                points[5] = rhh + dbValue
+                toPolar(points, rwh, rhh, 4)
                 // x2
                 it[i * 4 + 2] = points[6]
                 // y2
@@ -238,16 +244,16 @@ class CircleBarFftRenderer(
     private var angleModulation = 0f
     private var aggressive = 0.4f
 
-    private fun toPolar(cartesian: FloatArray, rect: Rect, start: Int): FloatArray {
-        val cX = (rect.width() / 2).toDouble()
-        val cY = (rect.height() / 2).toDouble()
+    private fun toPolar(cartesian: FloatArray, rwh: Int, rhh: Int, start: Int): FloatArray {
+        val cX = rwh.toDouble()
+        val cY = rhh.toDouble()
         val angle = cartesian[start] * 2 * Math.PI
         val radius =
-            (rect.width() / 2 * (1 - aggressive) + aggressive * cartesian[start+1] / 2) * (1 - modulationStrength + modulationStrength * (1 + sin(
+            (rwh * (1 - aggressive) + aggressive * cartesian[start + 1] / 2) * (1 - modulationStrength + modulationStrength * (1 + sin(
                 modulation.toDouble()
             )) / 2)
-        cartesian[start+2] = (cX + radius * sin(angle + angleModulation)).toFloat()
-        cartesian[start+3] = (cY + radius * cos(angle + angleModulation)).toFloat()
+        cartesian[start + 2] = (cX + radius * sin(angle + angleModulation)).toFloat()
+        cartesian[start + 3] = (cY + radius * cos(angle + angleModulation)).toFloat()
         return cartesian
     }
 
