@@ -133,17 +133,18 @@ class CircleRender(private val mPaint: Paint, private val mCycleColor: Boolean) 
 
         val rwh = rect.width() / 2
         val rhh = rect.height() / 2
+        val dataSize = data.size - 1
 
         mPoints?.let {
-            for (i in 0 until data.size - 1) {
-                points[0] = i.toFloat() / (data.size - 1)
+            for (i in 0 until dataSize) {
+                points[0] = i.toFloat() / (dataSize)
                 points[1] = (rhh + (data[i] + 128).toByte() * (rhh) / 128).toFloat()
                 toPolar(points, rwh, rhh, 0)
                 // x1
                 it[i * 4] = points[2]
                 // y1
                 it[i * 4 + 1] = points[3]
-                points[4] = (i + 1).toFloat() / (data.size - 1)
+                points[4] = (i + 1).toFloat() / (dataSize)
                 points[5] = (rhh + (data[i + 1] + 128).toByte() * (rhh) / 128).toFloat()
                 toPolar(points, rwh, rhh, 4)
                 // x2
@@ -205,6 +206,7 @@ class CircleBarFftRenderer(
 
         val rwh = rect.width() / 2
         val rhh = rect.height() / 2
+        val dataSize = data.size - 1
 
         mFFTPoints?.let {
             for (i in 0 until data.size / mDivisions) {
@@ -213,14 +215,14 @@ class CircleBarFftRenderer(
                 val ifk: Byte = data[mDivisions * i + 1]
                 val magnitude = (rfk * rfk + ifk * ifk).toFloat()
                 val dbValue = 75 * log10(magnitude.toDouble()).toFloat()
-                points[0] = (i * mDivisions).toFloat() / (data.size - 1)
+                points[0] = (i * mDivisions).toFloat() / (dataSize)
                 points[1] = rhh - dbValue / 4
                 toPolar(points, rwh, rhh, 0)
                 // x1
                 it[i * 4] = points[2]
                 // y1
                 it[i * 4 + 1] = points[3]
-                points[4] = (i * mDivisions).toFloat() / (data.size - 1)
+                points[4] = (i * mDivisions).toFloat() / (dataSize)
                 points[5] = rhh + dbValue
                 toPolar(points, rwh, rhh, 4)
                 // x2
